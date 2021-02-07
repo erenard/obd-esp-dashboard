@@ -221,44 +221,101 @@ void make_dashboard_rgb_palette()
 // derived from atari800
 static void dashboard_palette(float start_angle = 0)
 {
-    float color_diff = 28.6 * M_PI / 180.0;
-    int cr, lm;
-    float luma_mult[16]={
-        0.6941, 0.7091, 0.7241, 0.7401,
-        0.7560, 0.7741, 0.7931, 0.8121,
-        0.8260, 0.8470, 0.8700, 0.8930,
-        0.9160, 0.9420, 0.9690, 1.0000};
+    // float color_inc = 28.6 * M_PI / 180.0;
+    #define RAD(_d) ((_d - 180) * M_PI / 180.0)         // (degree - 180) because the color burst is 180d
+
+
+    // https://mrob.com/pub/xapple2/colors.html
+    // Color name      phase ampl luma   -R- -G- -B-
+    // black    COLOR=0    0   0    0      0   0   0
+    // gray     COLOR=5    0   0   50    156 156 156
+    // grey     COLOR=10   0   0   50    156 156 156
+    // white    COLOR=15   0   0  100    255 255 255
+    // dk blue  COLOR=2    0  60   25     96  78 189
+    // lt blue  COLOR=7    0  60   75    208 195 255
+    // purple   COLOR=3   45 100   50    255  68 253
+    // purple   HCOLOR=2  45 100   50    255  68 253
+    // red      COLOR=1   90  60   25    227  30  96
+    // pink     COLOR=11  90  60   75    255 160 208
+    // orange   COLOR=9  135 100   50    255 106  60
+    // orange   HCOLOR=5 135 100   50    255 106  60
+    // brown    COLOR=8  180  60   25     96 114   3
+    // yellow   COLOR=13 180  60   75    208 221 141
+    // lt green COLOR=12 225 100   50     20 245  60
+    // green    HCOLOR=1 225 100   50     20 245  60
+    // dk green COLOR=4  270  60   25      0 163  96
+    // aqua     COLOR=14 270  60   75    114 255 208
+    // med blue COLOR=6  315 100   50     20 207 253
+    // blue     HCOLOR=6 315 100   50     20 207 253
+    // NTSC Hsync          0   0  -40      0   0   0
+    // NTSC black          0   0    7.5   41  41  41
+    // NTSC Gray75         0   0   77    212 212 212
+    // YIQ +Q             33 100   50    255  81 255
+    // NTSC magenta       61  82   36    255  40 181
+    // NTSC red          104  88   28    255  28  76
+    // YIQ +I            123 100   50    255  89  82
+    // NTSC yellow       167  62   69    221 198 121
+    // Color burst       180  40   0       0   4   0
+    // YIQ -Q            213 100   50     51 232  41
+    // NTSC green        241  82   48     12 234  97
+    // NTSC cyan         284  88   56     10 245 198
+    // YIQ -I            303 100   50      0 224 231
+    // NTSC blue         347  62   15     38  65 155
+
+    // https://www.eetimes.com/measuring-composite-video-signal-performance-requires-understanding-differential-gain-and-phase-part-1-of-2/
+    float color_phase_angles[8] = {
+        RAD(0),      // White
+        RAD(167.1),  // Yellow
+        RAD(283.5),  // Cyan
+        RAD(240.7),  // Green
+        RAD(60.7),   // Magenta
+        RAD(103.5),  // Red
+        RAD(347.1),  // Blue
+        RAD(347.1),  // Blue
+    };
+
+    float color_luminances[8] = {
+        IRE(100.0),  // White
+        IRE(89.5),   // Yellow
+        IRE(72.3),   // Cyan
+        IRE(61.8),   // Green
+        IRE(45.7),   // Magenta
+        IRE(32.2),   // Red
+        IRE(18.0),   // Blue
+        IRE(18.0),   // Blue
+    };
+
+    float color_amplitudes[8] = {
+        // "- 40" is needed to calculate relative to 0 IRE level
+        0,                        // White
+        IRE(130.8 - 48.1 - 40),   // Yellow
+        IRE(130.8 - 13.9 - 40),   // Cyan
+        IRE(116.4 - 7.2 - 40),    // Green
+        IRE(100.3 - (-8.9) - 40), // Magenta
+        IRE(93.6 - (-23.3) - 40), // Red
+        IRE(59.4 - (-23.3) - 40), // Blue
+        IRE(59.4 - (-23.3) - 40), // Blue
+    };
 
     int i = 0;
     uint32_t pal[256];
-    printf("const uint32_t dashboard_4_phase_ntsc[256] = {\n");
-    for (cr = 0; cr < 16; cr ++) {
-        float angle = start_angle + ((15-cr) - 1) * color_diff;
-
-        for (lm = 0; lm < 16; lm ++) {
-            //double y = luma_mult[lm]*lm*(WHITE_LEVEL-BLACK_LEVEL)/15 + BLACK_LEVEL;
-            double y = lm*(WHITE_LEVEL-BLACK_LEVEL)/15 + BLACK_LEVEL;
+    for (int cr = 0; cr < 8; cr += 1) {
+        float angle = color_phase_angles[cr];
+        float luminance = color_luminances[cr];
+        float amplitude = color_amplitudes[cr];
+        for (int lm = 0; lm < 32; lm++) {
+            double y = BLACK_LEVEL + (luminance - BLACK_LEVEL) * (lm / 32.0);
             int p[4];
             for (int j = 0; j < 4; j++)
                 p[j] = y;
             for (int j = 0; j < 4; j++)
-                p[j] += sin(angle + 2*M_PI*j/4) * (cr ? BLANKING_LEVEL/2 : 0);
+                p[j] += sin(angle + 2.0 * M_PI * j / 4.0) * (amplitude / 2.0) * (lm / 32.0);
             uint32_t pi = 0;
             for (int j = 0; j < 4; j++)
                 pi = (pi << 8) | p[j] >> 8;
             pal[i++] = pi;
-            printf("0x%08X,",pi);
-            if ((lm & 7) == 7)
-                printf("\n");
         }
     }
-    printf("};\n");
-
-    // swizzled for ESP32
-    #define P0 (color >> 16)
-    #define P1 (color >> 8)
-    #define P2 (color)
-    #define P3 (color << 8)
 
     uint32_t color;
     // swizzed pattern for esp32 is 0 2 1 3
@@ -357,39 +414,40 @@ const uint32_t dashboard_palette_rgb[256] = {
 
 // swizzed ntsc palette in RAM
 const uint32_t dashboard_4_phase_ntsc[256] = {
-    0x18181818,0x1A1A1A1A,0x1C1C1C1C,0x1F1F1F1F,0x21212121,0x24242424,0x27272727,0x2A2A2A2A,
-    0x2D2D2D2D,0x30303030,0x34343434,0x38383838,0x3B3B3B3B,0x40404040,0x44444444,0x49494949,
-    0x1A15210E,0x1C182410,0x1E1A2612,0x211D2915,0x231F2B18,0x26222E1A,0x2925311D,0x2C283420,
-    0x2F2B3723,0x322E3A27,0x36323E2A,0x3A36412E,0x3D394532,0x423D4936,0x46424E3A,0x4B46523F,
-    0x151A210E,0x171D2310,0x191F2613,0x1C222815,0x1E242B18,0x21272E1B,0x242A311D,0x272D3420,
-    0x2A303724,0x2E333A27,0x31373D2A,0x353A412E,0x393E4532,0x3D424936,0x41474D3A,0x464B523F,
-    0x101F1F10,0x13212113,0x15232315,0x18262618,0x1A28281A,0x1D2B2B1D,0x202E2E20,0x23313123,
-    0x26343426,0x29383729,0x2D3B3B2D,0x303F3F31,0x34434234,0x38474738,0x3D4B4B3D,0x41505041,
-    0x0E211A15,0x10231D17,0x13261F19,0x1528221C,0x182B241F,0x1B2E2721,0x1D312A24,0x20342D27,
-    0x2337302A,0x273A332E,0x2A3E3731,0x2E413A35,0x32453E39,0x3649423D,0x3A4D4741,0x3F524B46,
-    0x0E21151A,0x1024181C,0x12261A1E,0x15291D21,0x182B1F24,0x1A2E2226,0x1D312529,0x2034282C,
-    0x23372B2F,0x273A2E33,0x2A3E3236,0x2E41353A,0x3245393E,0x36493D42,0x3A4E4246,0x3F52464B,
-    0x101F111E,0x12211320,0x15241623,0x17261825,0x1A291B28,0x1D2C1E2B,0x202F202E,0x23322331,
-    0x26352634,0x29382A37,0x2C3B2D3B,0x303F313E,0x34433542,0x38473946,0x3C4B3D4A,0x4150424F,
-    0x141B0E21,0x161D1023,0x19201326,0x1B221528,0x1E25182B,0x21281B2E,0x242A1E30,0x272E2133,
-    0x2A312436,0x2D34273A,0x30372B3D,0x343B2E41,0x383F3245,0x3C433649,0x40473A4D,0x454C3F52,
-    0x19160E21,0x1B181024,0x1E1B1226,0x201D1529,0x2320172B,0x26231A2E,0x29261D31,0x2C292034,
-    0x2F2C2337,0x322F273A,0x35322A3E,0x39362E41,0x3D3A3245,0x413E3649,0x45423A4E,0x4A473F52,
-    0x1E11101F,0x20141222,0x22161424,0x25191727,0x271B1929,0x2A1E1C2C,0x2D211F2F,0x30242232,
-    0x33272535,0x362A2838,0x3A2E2C3C,0x3E323040,0x41353343,0x46393847,0x4A3E3C4C,0x4F424150,
-    0x210E131C,0x2311161E,0x25131820,0x28161B23,0x2A181D26,0x2D1B2028,0x301E232B,0x3321262E,
-    0x36242931,0x3A272C35,0x3D2B3038,0x412E333C,0x45323740,0x49363B44,0x4D3B4048,0x523F444D,
-    0x210E1817,0x24101B19,0x26121D1B,0x29151F1E,0x2B172221,0x2E1A2523,0x311D2826,0x34202B29,
-    0x37232E2C,0x3A263130,0x3E2A3533,0x422E3837,0x45313C3B,0x4936403F,0x4E3A4543,0x523F4948,
-    0x200F1D12,0x22111F14,0x25142217,0x27162419,0x2A19271C,0x2D1C2A1F,0x2F1F2C22,0x32222F25,
-    0x35253328,0x3928362B,0x3C2C392F,0x402F3D32,0x44334136,0x4837453A,0x4C3B493E,0x51404E43,
-    0x1C13200F,0x1F152311,0x21172513,0x241A2816,0x261D2A19,0x291F2D1B,0x2C22301E,0x2F253321,
-    0x32283624,0x352C3928,0x392F3D2B,0x3C33402F,0x40374433,0x443B4837,0x493F4D3B,0x4D445140,
-    0x1818220E,0x1A1A2410,0x1C1C2612,0x1F1F2915,0x21212B17,0x24242E1A,0x2727311D,0x2A2A3420,
-    0x2D2D3723,0x30303A26,0x34343E2A,0x3838422E,0x3B3B4531,0x40404A36,0x44444E3A,0x4949533F,
-    0x131C200F,0x151F2311,0x17212513,0x1A242816,0x1D262A19,0x1F292D1B,0x222C301E,0x252F3321,
-    0x28323624,0x2C353928,0x2F393D2B,0x333C402F,0x37404433,0x3B444837,0x3F494D3B,0x444D5140,
+    0x18181818,0x19191919,0x1B1B1B1B,0x1C1C1C1C,0x1E1E1E1E,0x1F1F1F1F,0x21212121,0x22222222,
+    0x24242424,0x25252525,0x27272727,0x28282828,0x2A2A2A2A,0x2B2B2B2B,0x2D2D2D2D,0x2E2E2E2E,
+    0x30303030,0x32323232,0x33333333,0x35353535,0x36363636,0x38383838,0x39393939,0x3B3B3B3B,
+    0x3C3C3C3C,0x3E3E3E3E,0x3F3F3F3F,0x41414141,0x42424242,0x44444444,0x45454545,0x47474747,
+    0x18181818,0x19191918,0x1A1A1B19,0x1B1C1D1A,0x1C1D1F1A,0x1D1F211B,0x1F20231C,0x2022251C,
+    0x2123271D,0x2225291E,0x23262B1E,0x25282D1F,0x26292F20,0x272B3120,0x282C3321,0x292E3522,
+    0x2B2F3723,0x2C313923,0x2D323B24,0x2E343D25,0x2F353F25,0x31374126,0x32384327,0x333A4527,
+    0x343B4728,0x353D4929,0x373E4B29,0x38404D2A,0x39414F2B,0x3A43512B,0x3B44532C,0x3D46552D,
+    0x18181818,0x19181819,0x1B18191A,0x1D181A1B,0x1F181B1D,0x21181C1E,0x23181D1F,0x25181D20,
+    0x27191E22,0x29191F23,0x2B192024,0x2D192126,0x2F192227,0x31192228,0x33192329,0x351A242B,
+    0x371A252C,0x391A262D,0x3B1A272F,0x3D1A2730,0x3F1A2831,0x411A2932,0x431A2A34,0x451B2B35,
+    0x471B2C36,0x491B2C38,0x4B1B2D39,0x4D1B2E3A,0x4F1B2F3B,0x511B303D,0x531C313E,0x551C323F,
+    0x18181818,0x19181918,0x1B181A18,0x1D181C19,0x1E181D19,0x20181E1A,0x2218201A,0x2318211B,
+    0x2519221B,0x2719241C,0x2819251C,0x2A19261D,0x2C19281D,0x2D19291E,0x2F192A1E,0x31192C1F,
+    0x321A2D1F,0x341A2E1F,0x361A3020,0x371A3120,0x391A3221,0x3B1A3421,0x3D1A3522,0x3E1A3622,
+    0x401B3823,0x421B3923,0x431B3A24,0x451B3C24,0x471B3D25,0x481B3E25,0x4A1B4026,0x4C1C4126,
+    0x18181818,0x17191819,0x171A181A,0x171C181B,0x171D181C,0x171F181D,0x1720191E,0x1621191F,
+    0x16231920,0x16241921,0x16261922,0x16271A23,0x16281A24,0x162A1A25,0x152B1A26,0x152D1A27,
+    0x152E1B28,0x152F1B2A,0x15311B2B,0x15321B2C,0x14341B2D,0x14351B2E,0x14361C2F,0x14381C30,
+    0x14391C31,0x143B1C32,0x143C1C33,0x133D1D34,0x133F1D35,0x13401D36,0x13421D37,0x13431D38,
+    0x18181818,0x17191818,0x161A1918,0x161B1918,0x151D1A18,0x151E1B18,0x141F1B19,0x14211C19,
+    0x13221D19,0x13231D19,0x12251E19,0x12261E1A,0x11271F1A,0x1129201A,0x102A201A,0x102B211A,
+    0x0F2D221A,0x0F2E221B,0x0E2F231B,0x0E31231B,0x0D32241B,0x0D33251B,0x0C35251C,0x0C36261C,
+    0x0B37271C,0x0A39271C,0x0A3A281C,0x093B281C,0x093D291D,0x083E2A1D,0x083F2A1D,0x07412B1D,
+    0x18181818,0x18181718,0x18181719,0x1918161A,0x1918161B,0x1918151C,0x1A18151D,0x1A18141D,
+    0x1A18141E,0x1B18131F,0x1B181320,0x1B181221,0x1C181222,0x1C181122,0x1C181123,0x1D181024,
+    0x1D181025,0x1D181026,0x1E180F27,0x1E180F28,0x1E180E28,0x1F180E29,0x1F180D2A,0x1F180D2B,
+    0x20180C2C,0x20180C2D,0x20180B2D,0x21190B2E,0x21190A2F,0x21190A30,0x22190931,0x22190932,
+    0x18181818,0x18181718,0x18181719,0x1918161A,0x1918161B,0x1918151C,0x1A18151D,0x1A18141D,
+    0x1A18141E,0x1B18131F,0x1B181320,0x1B181221,0x1C181222,0x1C181122,0x1C181123,0x1D181024,
+    0x1D181025,0x1D181026,0x1E180F27,0x1E180F28,0x1E180E28,0x1F180E29,0x1F180D2A,0x1F180D2B,
+    0x20180C2C,0x20180C2D,0x20180B2D,0x21190B2E,0x21190A2F,0x21190A30,0x22190931,0x22190932,
 };
+
 uint32_t *dashboard_4_phase_ntsc_ram = 0;
 
 const uint32_t dashboard_4_phase_pal[] = {
@@ -476,11 +534,12 @@ public:
     {
         _lines = 0;
         init_screen();
+        gen_palettes();
     }
 
     virtual void gen_palettes()
     {
-        make_dashboard_rgb_palette();
+        // make_dashboard_rgb_palette();
         dashboard_palette();
     }
 
