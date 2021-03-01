@@ -5,10 +5,11 @@
 #include "soc/rtc.h"
 
 #include "constants.h"
+#define MODE PAL
+
+#include "palette/palette.h"
 #include "video_out/video_out.h"
 #include "dashboard/dashboard.h"
-
-#define MODE NTSC
 
 void setup_max_frequency() {
 	uint32_t freq_mhz = 240;
@@ -24,7 +25,7 @@ void app_main(void) {
 	setup_max_frequency();
 	dashboard_init();
 	TaskHandle_t dashboard_task = dashboard_create_task();
-	const uint32_t *palette = dashboard_generate_palette(MODE);
+	const uint32_t *palette = palette_generate_palette(MODE);
 
 	while (_lines == 0) {
 		// Wait for _lines
