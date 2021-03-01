@@ -23,6 +23,8 @@
 #include "driver/dac.h"
 #include "driver/i2s.h"
 
+#include "video_out.h"
+
 uint8_t **_lines;
 
 static int _pal_ = 0;
@@ -175,19 +177,6 @@ static uint32_t cpu_ticks() {
 //static uint32_t us() {
 //	return cpu_ticks() / 240;
 //}
-
-// Color clock frequency is 315/88 (3.57954545455)
-// DAC_MHZ is 315/11 or 8x color clock
-// 455/2 color clocks per line, round up to maintain phase
-// HSYNCH period is 44/315*455 or 63.55555..us
-// Field period is 262*44/315*455 or 16651.5555us
-
-#define IRE(_x)          ((uint32_t)(((_x)+40)*255/3.3/147.5) << 8)   // 3.3V DAC
-#define SYNC_LEVEL       IRE(-40)
-#define BLANKING_LEVEL   IRE(0)
-#define BLACK_LEVEL      IRE(7.5)
-#define GRAY_LEVEL       IRE(50)
-#define WHITE_LEVEL      IRE(100)
 
 #define P0 (color >> 16)
 #define P1 (color >> 8)

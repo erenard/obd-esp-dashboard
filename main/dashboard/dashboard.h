@@ -10,7 +10,6 @@
 
 uint8_t** dashboard_init(void);
 TaskHandle_t * dashboard_create_task(void);
-const uint32_t * dashboard_generate_palette(int video_mode);
 
 // uint8_t dashboard_get_pixel(const uint8_t* position);
 // void dashboard_set_pixel(uint8_t* position, uint8_t pixel);
