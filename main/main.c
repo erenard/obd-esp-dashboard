@@ -5,7 +5,7 @@
 #include "soc/rtc.h"
 
 #include "constants.h"
-#define MODE PAL
+#define MODE NTSC
 
 #include "palette/palette.h"
 #include "video_out/video_out.h"

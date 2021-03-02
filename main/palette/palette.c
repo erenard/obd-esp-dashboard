@@ -14,6 +14,17 @@
 #include "freertos/FreeRTOS.h"
 
 uint32_t* palette_generate_palette(int mode) {
+//	if(mode == NTSC) {
+//		float R, G, B;
+//
+//		float Y =  0.30 * R + 0.59 * G - B;
+//		float Q =  0.41 * (B - Y) + 0.48 * (R - Y);
+//		float I = -0.27 * (B - Y) + 0.74 * (R - Y);
+//
+//		float signal = Y + Q * sin(t + 33deg) + I * cos(t + 33deg);
+//	}
+//	else
+
 	if(mode == NTSC) {
 	    // float color_inc = 28.6 * M_PI / 180.0;
 	    #define RAD(_d) ((_d - 180) * M_PI / 180.0)         // (degree - 180) because the color burst phase is 180d
