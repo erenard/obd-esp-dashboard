@@ -170,9 +170,9 @@ static void video_init_hw(int line_width, int samples_per_cc) {
 
 //====================================================================================================
 //====================================================================================================
-static uint32_t cpu_ticks() {
-	return xthal_get_ccount();
-}
+//static uint32_t cpu_ticks() {
+//	return xthal_get_ccount();
+//}
 
 //static uint32_t us() {
 //	return cpu_ticks() / 240;
