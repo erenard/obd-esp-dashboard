@@ -105,3 +105,20 @@ inline void framebuffer_set_pixel(uint8_t *dst, uint8_t p) {
 	uint32_t *d = (uint32_t*) (s & ~3);
 	d[0] = (d[0] & ~(0xFF << shift)) | (p << shift);
 }
+
+static uint8_t color = 0;
+
+void useColor(uint8_t c) {
+	color = c;
+}
+
+void setPixel(int x, int y) {
+	uint8_t *line = (uint8_t*) framebuffer_screen_back_lines[y];
+	framebuffer_set_pixel(line + x, color);
+}
+
+void setPixelAA(int x, int y, uint8_t d) {
+	uint8_t *line = (uint8_t*) framebuffer_screen_back_lines[y];
+	framebuffer_set_pixel(line + x, color - (d >> 3));
+}
+

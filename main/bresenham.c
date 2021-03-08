@@ -1,6 +1,8 @@
 #include <math.h>
 #include <assert.h>
 #include <stdbool.h>
+#include "framebuffer.h"
+#include "bresenham.h"
 
 #define min(a,b) \
    ({ __typeof__ (a) _a = (a); \
@@ -11,9 +13,6 @@
    ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
      _a > _b ? _a : _b; })
-
-#include "graphics.h"
-#include "bresenham.h"
 
 /********************************************************************
 *                                                                   *
@@ -47,22 +46,22 @@ void plotLine(int x0, int y0, int x1, int y1)
     }
 }
 
-void plotLine3d (int x0, int y0, int z0, int x1, int y1, int z1)
-{
-    int dx = abs(x1-x0), sx = x0 < x1 ? 1 : -1;
-    int dy = abs(y1-y0), sy = y0 < y1 ? 1 : -1;
-    int dz = abs(z1-z0), sz = z0 < z1 ? 1 : -1;
-    int dm = dx > dy && dx > dz ? dx : dy > dz ? dy : dz, i = dm; /* max diff */
-    x1 = y1 = z1 = dm/2;                                      /* error offset */
-
-    for (;;) {
-        setPixel3D(x0,y0,z0);
-        if (i-- == 0) break;
-        x1 -= dx; if (x1 < 0) { x1 += dm; x0 += sx; }
-        y1 -= dy; if (y1 < 0) { y1 += dm; y0 += sy; }
-        z1 -= dz; if (z1 < 0) { z1 += dm; z0 += sz; }
-    }
-}
+//void plotLine3d (int x0, int y0, int z0, int x1, int y1, int z1)
+//{
+//    int dx = abs(x1-x0), sx = x0 < x1 ? 1 : -1;
+//    int dy = abs(y1-y0), sy = y0 < y1 ? 1 : -1;
+//    int dz = abs(z1-z0), sz = z0 < z1 ? 1 : -1;
+//    int dm = dx > dy && dx > dz ? dx : dy > dz ? dy : dz, i = dm; /* max diff */
+//    x1 = y1 = z1 = dm/2;                                      /* error offset */
+//
+//    for (;;) {
+//        setPixel3D(x0,y0,z0);
+//        if (i-- == 0) break;
+//        x1 -= dx; if (x1 < 0) { x1 += dm; x0 += sx; }
+//        y1 -= dy; if (y1 < 0) { y1 += dm; y0 += sy; }
+//        z1 -= dz; if (z1 < 0) { z1 += dm; z0 += sz; }
+//    }
+//}
 
 void plotEllipse(int xm, int ym, int a, int b)
 {
@@ -319,7 +318,7 @@ void plotRotatedEllipse(int x, int y, int a, int b, float angle)
    float s = sin(angle), zd = (xd-yd)*s;                  /* ellipse rotation */
    xd = sqrt(xd-zd*s), yd = sqrt(yd+zd*s);           /* surrounding rectangle */
    a = xd+0.5; b = yd+0.5; zd = zd*a*b/(xd*yd);           /* scale to integer */
-   plotRotatedEllipseRect(x-a,y-b, x+a,y+b, (long)(4*zd*cos(angle)));
+   plotRotatedEllipseRect(x-a, y-b, x+a, y+b, (long)(4*zd*cos(angle)));
 }
 
 void plotRotatedEllipseRect(int x0, int y0, int x1, int y1, long zd)
@@ -740,17 +739,17 @@ void plotLineWidth(int x0, int y0, int x1, int y1, float wd)
    float ed = dx+dy == 0 ? 1 : sqrt((float)dx*dx+(float)dy*dy);
 
    for (wd = (wd+1)/2; ; ) {                                    /* pixel loop */
-      setPixelColor(x0, y0, max(0,255*(abs(err-dx+dy)/ed-wd+1)));
+      setPixelAA(x0, y0, max(0,255*(abs(err-dx+dy)/ed-wd+1)));
       e2 = err; x2 = x0;
       if (2*e2 >= -dx) {                                            /* x step */
          for (e2 += dy, y2 = y0; e2 < ed*wd && (y1 != y2 || dx > dy); e2 += dx)
-            setPixelColor(x0, y2 += sy, max(0,255*(abs(e2)/ed-wd+1)));
+            setPixelAA(x0, y2 += sy, max(0,255*(abs(e2)/ed-wd+1)));
          if (x0 == x1) break;
          e2 = err; err -= dy; x0 += sx;
       }
       if (2*e2 <= dy) {                                             /* y step */
          for (e2 = dx-e2; e2 < ed*wd && (x1 != x2 || dx < dy); e2 += dy)
-            setPixelColor(x2 += sx, y0, max(0,255*(abs(e2)/ed-wd+1)));
+            setPixelAA(x2 += sx, y0, max(0,255*(abs(e2)/ed-wd+1)));
          if (y0 == y1) break;
          err += dx; y0 += sy;
       }

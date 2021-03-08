@@ -6,5 +6,6 @@ idf_component_register(
 		"framebuffer.c"
 		"palette.c"
 		"graphics.c"
+		"bresenham.c"
 	INCLUDE_DIRS "."
 )

@@ -564,10 +564,10 @@ static void IRAM_ATTR video_isr(volatile void *vbuf) {
 			burst(buf);
 			blit(_lines[i], buf + _active_start);
 
-		} else if (i < (_active_lines + 5)) {   // post render/black
+		} else if (i < (_active_lines + 10)) {   // post render/black
 			blanking(buf, false);
 
-		} else if (i < (_active_lines + 8)) {   // vsync
+		} else if (i < (_active_lines + 13)) {   // vsync
 			blanking(buf, true);
 
 		} else {                                // pre render/black

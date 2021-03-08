@@ -25,9 +25,7 @@ void setup_max_frequency() {
 
 void app_main(void) {
 	setup_max_frequency();
-
 	framebuffer_init();
-	// TODO move this
 	_lines = framebuffer_get_front();
 	graphics_init();
 	TaskHandle_t application_task = application_create_task();

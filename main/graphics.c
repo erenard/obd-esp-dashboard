@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 
 #include "framebuffer.h"
+#include "bresenham.h"
 
 static uint8_t** lines;
 
@@ -52,6 +53,23 @@ void graphics_draw_test_pattern() {
 			first_cell_number = cell_number;
 		}
 	}
+}
+
+void graphics_draw_full_grid() {
+	for (int y = 0; y < framebuffer_screen_HEIGHT; y++) {
+		uint8_t *line = (uint8_t*) lines[y];
+		for (int x = 0; x < framebuffer_screen_WIDTH; x++) {
+			framebuffer_set_pixel(line + x, 0);
+		}
+	}
+
+	useColor(31);
+	setPixel(100, 100);
+
+	plotLine(10, 10, 50, 50);
+
+	plotCircleAA(150, 150, 50);
+
 }
 
 // Used to find margins of a given screen

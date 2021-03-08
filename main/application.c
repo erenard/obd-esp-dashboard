@@ -14,7 +14,7 @@
 static void read_obd_data() {}
 
 static void repaint_dashboard() {
-	graphics_draw_test_pattern();
+	graphics_draw_full_grid();
 }
 
 static void application_task(void *arg) {
@@ -26,7 +26,6 @@ static void application_task(void *arg) {
 
 	free(out_config);
 
-	graphics_init();
 	for (;;) {
 		read_obd_data();
 		repaint_dashboard();
