@@ -4,14 +4,15 @@
  *  Created on: Mar 1, 2021
  *      Author: eric
  */
-#include "palette.h"
-#include "../video_out/video_out.h"
-#include "constants.h"
 
 #include <stdio.h>
 #include <math.h>
 
 #include "freertos/FreeRTOS.h"
+
+#include "palette.h"
+#include "video_out.h"
+#include "constants.h"
 
 uint32_t* palette_generate_palette(int mode) {
 //	if(mode == NTSC) {

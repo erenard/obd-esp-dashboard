@@ -1,5 +1,13 @@
-# Blink Example
 
-Starts a FreeRTOS task to blink an LED
+Application layers
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+- video_out
+- frame_buffer
+- graphics
+- dashboard
+- obd_can_interface
+
+Utils
+- palette_generator
+- bresenham_lines
+

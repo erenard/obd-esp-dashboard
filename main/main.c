@@ -7,9 +7,11 @@
 #include "constants.h"
 #define MODE NTSC
 
-#include "palette/palette.h"
-#include "video_out/video_out.h"
-#include "dashboard/dashboard.h"
+#include "palette.h"
+#include "video_out.h"
+#include "framebuffer.h"
+#include "graphics.h"
+#include "application.h"
 
 void setup_max_frequency() {
 	uint32_t freq_mhz = 240;
@@ -23,17 +25,15 @@ void setup_max_frequency() {
 
 void app_main(void) {
 	setup_max_frequency();
-	dashboard_init();
-	TaskHandle_t dashboard_task = dashboard_create_task();
+
+	framebuffer_init();
+	// TODO move this
+	_lines = framebuffer_get_front();
+	graphics_init();
+	TaskHandle_t application_task = application_create_task();
 	const uint32_t *palette = palette_generate_palette(MODE);
-
-	while (_lines == 0) {
-		// Wait for _lines
-		vTaskDelay(1);
-	}
-
 	printf("video_init\n");
-	video_init(palette, MODE, dashboard_task);
+	video_init(palette, MODE, application_task);
 
 	while (true) {
 		// OBD Stuff

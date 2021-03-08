@@ -8,6 +8,8 @@
 #ifndef MAIN_GRAPHICS_GRAPHICS_H_
 #define MAIN_GRAPHICS_GRAPHICS_H_
 
+void setColor(int color);
+
 void setPixel(int x, int y);
 void setPixel3D(int x, int y, int z);
 void setPixelAA(int x, int y, int i);

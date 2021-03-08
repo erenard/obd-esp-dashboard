@@ -217,8 +217,7 @@ void plotQuadBezier(int x0, int y0, int x1, int y1, int x2, int y2)
    plotQuadBezierSeg(x0,y0, x1,y1, x2,y2);                  /* remaining part */
 }
 
-void plotQuadRationalBezierSeg(int x0, int y0, int x1, int y1,
-                               int x2, int y2, float w)
+void plotQuadRationalBezierSeg(int x0, int y0, int x1, int y1, int x2, int y2, float w)
 {                   /* plot a limited rational Bezier segment, squared weight */
   int sx = x2-x1, sy = y2-y1;                   /* relative values for checks */
   double dx = x0-x2, dy = y0-y2, xx = x0-x1, yy = y0-y1;
@@ -264,8 +263,7 @@ void plotQuadRationalBezierSeg(int x0, int y0, int x1, int y1,
   plotLine(x0,y0, x2,y2);                     /* plot remaining needle to end */
 }
 
-void plotQuadRationalBezier(int x0, int y0, int x1, int y1,
-                            int x2, int y2, float w)
+void plotQuadRationalBezier(int x0, int y0, int x1, int y1, int x2, int y2, float w)
 {                                 /* plot any quadratic rational Bezier curve */
    int x = x0-2*x1+x2, y = y0-2*y1+y2;
    double xx = x0-x1, yy = y0-y1, ww, t, q;
@@ -338,8 +336,7 @@ void plotRotatedEllipseRect(int x0, int y0, int x1, int y1, long zd)
    plotQuadRationalBezierSeg(x1,y1-yd, x1,y0, x0+xd,y0, w);
 }
 
-void plotCubicBezierSeg(int x0, int y0, float x1, float y1,
-                        float x2, float y2, int x3, int y3)
+void plotCubicBezierSeg(int x0, int y0, float x1, float y1, float x2, float y2, int x3, int y3)
 {                                        /* plot limited cubic Bezier segment */
    int f, fx, fy, leg = 1;
    int sx = x0 < x3 ? 1 : -1, sy = y0 < y3 ? 1 : -1;        /* step direction */
@@ -399,8 +396,7 @@ exit: xx = x0; x0 = x3; x3 = xx; sx = -sx; xb = -xb;             /* swap legs */
    plotLine(x0,y0, x3,y3);       /* remaining part in case of cusp or crunode */
 }
 
-void plotCubicBezier(int x0, int y0, int x1, int y1,
-                     int x2, int y2, int x3, int y3)
+void plotCubicBezier(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3)
 {                                              /* plot any cubic Bezier curve */
    int n = 0, i = 0;
    long xc = x0+x1-x2-x3, xa = xc-4*(x1-x2);
@@ -595,8 +591,7 @@ void plotQuadBezierSegAA(int x0, int y0, int x1, int y1, int x2, int y2)
    plotLineAA(x0,y0, x2,y2);                  /* plot remaining needle to end */
 }
 
-void plotQuadRationalBezierSegAA(int x0, int y0, int x1, int y1,
-                                 int x2, int y2, float w)
+void plotQuadRationalBezierSegAA(int x0, int y0, int x1, int y1, int x2, int y2, float w)
 {   /* draw an anti-aliased rational quadratic Bezier segment, squared weight */
    int sx = x2-x1, sy = y2-y1;                  /* relative values for checks */
    double dx = x0-x2, dy = y0-y2, xx = x0-x1, yy = y0-y1;
@@ -652,8 +647,7 @@ void plotQuadRationalBezierSegAA(int x0, int y0, int x1, int y1,
    plotLineAA(x0,y0, x2,y2);                  /* plot remaining needle to end */
 }
 
-void plotCubicBezierSegAA(int x0, int y0, float x1, float y1,
-                          float x2, float y2, int x3, int y3)
+void plotCubicBezierSegAA(int x0, int y0, float x1, float y1, float x2, float y2, int x3, int y3)
 {                           /* plot limited anti-aliased cubic Bezier segment */
    int f, fx, fy, leg = 1;
    int sx = x0 < x3 ? 1 : -1, sy = y0 < y3 ? 1 : -1;        /* step direction */
