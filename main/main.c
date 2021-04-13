@@ -8,7 +8,7 @@
 #define MODE NTSC
 
 #include "palette.h"
-#include "video_out.h"
+#include "ntsc_out.h"
 #include "framebuffer.h"
 #include "graphics.h"
 #include "application.h"
