@@ -11,7 +11,7 @@
 #include "freertos/FreeRTOS.h"
 
 #define framebuffer_screen_WIDTH  384
-#define framebuffer_screen_HEIGHT 240 // Works with 288
+#define framebuffer_screen_HEIGHT 243 // Works with 288
 
 void framebuffer_init();
 uint8_t** framebuffer_get_front();

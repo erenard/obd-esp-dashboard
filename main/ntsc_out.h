@@ -14,8 +14,8 @@
  ** SOFTWARE.
  */
 
-#ifndef MAIN_VIDEO_OUT_VIDEO_OUT_H_
-#define MAIN_VIDEO_OUT_VIDEO_OUT_H_
+#ifndef MAIN_NTSC_OUT_H_
+#define MAIN_NTSC_OUT_H_
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -33,7 +33,7 @@
 #define GRAY_LEVEL       IRE(50)
 #define WHITE_LEVEL      IRE(100)
 
-uint8_t **_lines;
+uint8_t ** _lines;
 void video_init(const uint32_t *palette, int ntsc, TaskHandle_t repaint_task);
 
-#endif /* MAIN_VIDEO_OUT_VIDEO_OUT_H_ */
+#endif /* MAIN_NTSC_OUT_H_ */

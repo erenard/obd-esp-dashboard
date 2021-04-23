@@ -11,7 +11,7 @@
 #include "freertos/FreeRTOS.h"
 
 #include "palette.h"
-#include "video_out.h"
+#include "ntsc_out.h"
 #include "constants.h"
 
 uint32_t* palette_generate_palette(int mode) {
@@ -114,7 +114,7 @@ uint32_t* palette_generate_palette(int mode) {
 	            for (int j = 0; j < 4; j++)
 	                p[j] = y;
 	            for (int j = 0; j < 4; j++)
-	                p[j] += sin(angle + 2.0 * M_PI * j / 4.0) * (amplitude / 2.0) * (lm / 32.0);
+	                p[j] += sin(angle + j * M_PI / 2.0) * (amplitude / 2.0) * (lm / 32.0);
 	            uint32_t pi = 0;
 	            for (int j = 0; j < 4; j++)
 	                pi = (pi << 8) | p[j] >> 8;
@@ -130,7 +130,7 @@ uint32_t* palette_generate_palette(int mode) {
 	        esp_cc_color = cc_colors[i];
 	        esp_cc_color = (esp_cc_color & 0xFF0000FF) | ((esp_cc_color << 8) & 0x00FF0000) | ((esp_cc_color >> 8) & 0x0000FF00);
 	        esp_cc_colors[i] = esp_cc_color;
-	        printf("0x%08X,",esp_cc_color);
+	        printf("0x%08X,", esp_cc_color);
 	        if ((i & 7) == 7)
 	            printf("\n");
 	    }
