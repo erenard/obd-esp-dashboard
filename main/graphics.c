@@ -66,13 +66,13 @@ void graphics_draw_full_grid() {
 	useColor(31);
 
 	// NTSC 380x236 => aspet ratio: 29/18, 14.5/9
-	plotLineAA(0, 3, 380, 239);
-	plotLineAA(380, 3, 0, 239);
+	plotLineAA(0, 3, 380, 280);
+	plotLineAA(380, 3, 0, 280);
 
 	plotLine(0, 3, 380, 3);
-	plotLine(0, 3, 0, 239);
-	plotLine(380, 3, 380, 239);
-	plotLine(0, 239, 380, 239);
+	plotLine(0, 3, 0, 280);
+	plotLine(380, 3, 380, 280);
+	plotLine(0, 280, 380, 280);
 
 	plotCircleAA(190, 119, 100);
 }
