@@ -23,7 +23,7 @@
 #define IRE(_x)          ((uint32_t)(((_x)+40)*255/3.3/140) << 8)   // 3.3V DAC
 #define SYNC_LEVEL       IRE(-40)
 #define BLANKING_LEVEL   IRE(0)
-#define BLACK_LEVEL      IRE(0)
+#define BLACK_LEVEL      IRE(7.5)
 #define GRAY_LEVEL       IRE(50)
 #define WHITE_LEVEL      IRE(100)
 

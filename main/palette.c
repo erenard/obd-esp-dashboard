@@ -15,6 +15,9 @@
 #include "constants.h"
 
 uint32_t* palette_generate_palette(int mode) {
+	printf("WHITE_LEVEL 0x%08X,", WHITE_LEVEL);
+	printf("BLACK_LEVEL 0x%08X,", BLACK_LEVEL);
+
 //	if(mode == NTSC) {
 //		float R, G, B;
 //

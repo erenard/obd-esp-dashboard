@@ -144,6 +144,10 @@ static int _hsync_short;
 static int _burst_start;
 static int _active_start;
 
+static int16_t *_burst0 = 0; // pal bursts
+static int16_t *_burst1 = 0;
+static int _burst_width;
+
 static int usec(float us) {
 	uint32_t r = (uint32_t) (us * _sample_rate);
 	return r - (r % 4);
@@ -162,7 +166,20 @@ void video_init(const uint32_t *palette, int ntsc, TaskHandle_t repaint_task) {
 	_hsync = usec(4.7);
 	_half_line = (_line_width / 2) - (_line_width / 2) % 4;
 	_burst_start = usec(4.7 + 0.9); // sync + breeze away 0.9us
+	_burst_width = (int) (9 * 4 + 4) & 0xFFFE;
 	_active_start = usec(4.7 + 5.7); // sync + back porch
+
+	// make colorburst tables for even and odd lines
+	_burst0 = calloc(_burst_width, sizeof(int16_t));
+	_burst1 = calloc(_burst_width, sizeof(int16_t));
+	float phase = 2 * M_PI / 2;
+	for (int i = 0; i < _burst_width; i++) {
+		_burst0[i] = BLANKING_LEVEL
+				+ sin(phase + 3 * M_PI / 4) * BLANKING_LEVEL / 1.5;
+		_burst1[i] = BLANKING_LEVEL
+				+ sin(phase - 3 * M_PI / 4) * BLANKING_LEVEL / 1.5;
+		phase += 2 * M_PI / 4;
+	}
 
 	video_init_hw(_line_width);    // init the hardware
 }
@@ -185,36 +202,17 @@ uint32_t _isr_us = 0;
 // draw a line of field 1
 static void IRAM_ATTR image( uint16_t *i2s_buffer, uint8_t *src) {
 	uint32_t *d = (uint32_t*) i2s_buffer;
-	const uint32_t *p = _palette;
+
+	// bool even = _line_counter & 1;
+	bool even = true;
+	const uint32_t *p = even ? _palette : _palette + 256;
 
 	BEGIN_TIMING();
 
 	// 230 color clocks, 460 pixels
 	for (int i = 0; i < 460; i += 4) {
-//		uint32_t c = *((uint32_t*) src); // screen may be in 32 bit mem
-		uint32_t c = 0x3f3f3f3f;
-		d[0] = p[(uint8_t) c];
-		d[1] = p[(uint8_t) (c >> 8)] << 8;
-		d[2] = p[(uint8_t) (c >> 16)];
-		d[3] = p[(uint8_t) (c >> 24)] << 8;
-		d += 4;
-		src += 4;
-	}
-
-	END_TIMING();
-}
-
-// draw a line of field 2
-static void IRAM_ATTR image2( uint16_t *i2s_buffer, uint8_t *src) {
-	uint32_t *d = (uint32_t*) i2s_buffer;
-	const uint32_t *p = _palette;
-
-	BEGIN_TIMING();
-
-	// 192 color clocks, 384 pixels
-	for (int i = 0; i < 384; i += 4) {
-//		uint32_t c = *((uint32_t*) src); // screen may be in 32 bit mem
-		uint32_t c = 0x3f3f3f3f;
+		// uint32_t c = *((uint32_t*) src); // screen may be in 32 bit mem
+		uint32_t c = 0x404A5A30;
 		d[0] = p[(uint8_t) c];
 		d[1] = p[(uint8_t) (c >> 8)] << 8;
 		d[2] = p[(uint8_t) (c >> 16)];
@@ -227,17 +225,22 @@ static void IRAM_ATTR image2( uint16_t *i2s_buffer, uint8_t *src) {
 }
 
 static void IRAM_ATTR burst(uint16_t *line) {
-	for (int i = 0; i < 4 * 9; i += 4) {
-		line[i + 1] = BLANKING_LEVEL;
-		line[i + 0] = BLANKING_LEVEL + BLANKING_LEVEL / 2;
-		line[i + 3] = BLANKING_LEVEL;
-		line[i + 2] = BLANKING_LEVEL - BLANKING_LEVEL / 2;
+	line += _burst_start;
+	int16_t *b = (_line_counter & 1) ? _burst0 : _burst1;
+	for (int i = 0; i < _burst_width; i += 2) {
+		line[i ^ 1] = b[i];
+		line[(i + 1) ^ 1] = b[i + 1];
 	}
 }
 
 static void IRAM_ATTR fill(uint16_t *line, int16_t level, int width) {
 	for (int i = 0; i < width; i++)
 		line[i] = level;
+}
+
+static void IRAM_ATTR fill_special(uint16_t *line, int16_t level, int width) {
+	for (int i = 0; i < width; i++)
+		line[i] = (i / 8) % 2 ? level : BLACK_LEVEL;
 }
 
 // Workhorse ISR handles audio and video updates
@@ -271,6 +274,7 @@ static void IRAM_ATTR video_isr(volatile void *vbuf) {
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
 		image(line + _active_start, _lines[i - 23]);
+		// fill_special(line + _active_start, WHITE_LEVEL, 768);
 	} else if (i < 312) { // 311 - 312
 		fill(line, SYNC_LEVEL, _hsync_short);
 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
@@ -292,7 +296,8 @@ static void IRAM_ATTR video_isr(volatile void *vbuf) {
 	} else if (i < 622) { // 336 - 622
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
-		image2(line + _active_start, _lines[i - 335]);
+		image(line + _active_start, _lines[i - 335]);
+		// fill_special(line + _active_start, WHITE_LEVEL, 768);
 	} else if (i == 622) { // 623
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
