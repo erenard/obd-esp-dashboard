@@ -65,16 +65,18 @@ void graphics_draw_full_grid() {
 
 	useColor(31);
 
-	// NTSC 380x236 => aspet ratio: 29/18, 14.5/9
-	plotLineAA(0, 3, 380, 239);
-	plotLineAA(380, 3, 0, 239);
+	int maxX = 361;
+	int maxY = 224;
+	// 362x225 => 14.48/9
+	plotLineAA(0, 0, maxX, maxY);
+	plotLineAA(maxX, 0, 0, maxY);
 
-	plotLine(0, 3, 380, 3);
-	plotLine(0, 3, 0, 239);
-	plotLine(380, 3, 380, 239);
-	plotLine(0, 239, 380, 239);
+	plotLine(0, 0, maxX, 0);
+	plotLine(0, 0, 0, maxY);
+	plotLine(maxX, 0, maxX, maxY);
+	plotLine(0, maxY, maxX, maxY);
 
-	plotCircleAA(190, 119, 100);
+	plotCircleAA(maxX / 2, maxY / 2, 100);
 }
 
 // Used to find margins of a given screen

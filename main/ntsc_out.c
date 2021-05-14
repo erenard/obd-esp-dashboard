@@ -131,9 +131,6 @@ static TaskHandle_t _repaint_task = NULL;
 static volatile int _line_counter = 0;
 static volatile int _frame_counter = 0;
 
-static int _active_lines;
-// static int _image_width;
-
 static int _line_width;
 static const uint32_t *_palette;
 
@@ -165,10 +162,8 @@ void video_init(const uint32_t *palette, int ntsc, TaskHandle_t repaint_task) {
 	_hsync = usec(4.7);
 	_half_line = (_line_width / 2) - (_line_width / 2) % 4;
 	_burst_start = usec(4.7 + 0.6); // breeze away 0.6us
-	_active_start = usec(4.7 + 4.7);
+	_active_start = usec(4.7 + 4.7) + 20; // offset of 5 color clock
 
-	_active_lines = 240;
-	// _image_width = usec(52.6); // 188px
 	video_init_hw(_line_width);    // init the hardware
 }
 
@@ -195,7 +190,7 @@ static void IRAM_ATTR image( uint16_t *i2s_buffer, uint8_t *src) {
 	BEGIN_TIMING();
 
 	// 192 color clocks, 384 pixels
-	for (int i = 0; i < 384; i += 4) {
+	for (int i = 0; i < 362; i += 4) {
 		uint32_t c = *((uint32_t*) src); // screen may be in 32 bit mem
 		d[0] = p[(uint8_t) c];
 		d[1] = p[(uint8_t) (c >> 8)] << 8;
@@ -246,13 +241,19 @@ static void IRAM_ATTR video_isr(volatile void *vbuf) {
 	} else if (i < 9) {
 		fill(line, SYNC_LEVEL, _hsync_short);
 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
-	} else if (i < 19) {
+	} else if (i < 29) {
+		// the image should start @19, but my cheap screen shows from 29.
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
+	} else if (i < 254) {
+		fill(line, SYNC_LEVEL, _hsync);
+		burst(line + _burst_start);
+		// the image should start @19, but my cheap screen shows from 29.
+		image(line + _active_start, _lines[i - 29]);
 	} else if (i < 262) {
+		// the image should finish @263, but my cheap screen shows only 225 lines.
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
-		image(line + _active_start, _lines[i - 19]);
 	} else if (i < 263) {
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
@@ -276,13 +277,18 @@ static void IRAM_ATTR video_isr(volatile void *vbuf) {
 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
 	} else if (i < 272) {
 		fill(line, SYNC_LEVEL, _hsync_short);
-	} else if (i < 282) {
+	} else if (i < 292) { // the image should start @282, but my cheap screen shows from 292.
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
+	} else if (i < 517) { // the image should finish @525, but my cheap screen shows only 225 lines.
+		fill(line, SYNC_LEVEL, _hsync);
+		burst(line + _burst_start);
+		// the image should start @282, but my cheap screen shows from 292.
+		image(line + _active_start, _lines[i - 292]);
 	} else if (i < 525) {
+		// the image should finish @525, but my cheap screen shows only 225 lines.
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
-		image(line + _active_start, _lines[i - 282]);
 		if (i == 524) {
 			if(_repaint_task != NULL) {
 				xTaskNotifyFromISR(_repaint_task, 0, eNoAction, NULL);
