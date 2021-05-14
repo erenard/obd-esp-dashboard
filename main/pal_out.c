@@ -166,7 +166,8 @@ void video_init(const uint32_t *palette, int ntsc, TaskHandle_t repaint_task) {
 	_hsync = usec(4.7);
 	_half_line = (_line_width / 2) - (_line_width / 2) % 4;
 	_burst_start = usec(4.7 + 0.9); // sync + breeze away 0.9us
-	_burst_width = (int) (9 * 4 + 4) & 0xFFFE;
+	// _burst_width = (int) (9 * 4 + 4) & 0xFFFE;
+	_burst_width = (int) (9 * 4 + 4);
 	_active_start = usec(4.7 + 5.7); // sync + back porch
 
 	// make colorburst tables for even and odd lines
@@ -212,11 +213,15 @@ static void IRAM_ATTR image( uint16_t *i2s_buffer, uint8_t *src) {
 	// 230 color clocks, 460 pixels
 	for (int i = 0; i < 460; i += 4) {
 		// uint32_t c = *((uint32_t*) src); // screen may be in 32 bit mem
-		uint32_t c = 0x404A5A30;
-		d[0] = p[(uint8_t) c];
-		d[1] = p[(uint8_t) (c >> 8)] << 8;
-		d[2] = p[(uint8_t) (c >> 16)];
-		d[3] = p[(uint8_t) (c >> 24)] << 8;
+		// d[0] = p[(uint8_t) c];
+		// d[1] = p[(uint8_t) (c >> 8)] << 8;
+		// d[2] = p[(uint8_t) (c >> 16)];
+		// d[3] = p[(uint8_t) (c >> 24)] << 8;
+		d[0] = 0x40004000;
+		d[1] = 0x40004000;
+		d[2] = 0x40004000;
+		d[3] = 0x40004000;
+
 		d += 4;
 		src += 4;
 	}
@@ -225,7 +230,6 @@ static void IRAM_ATTR image( uint16_t *i2s_buffer, uint8_t *src) {
 }
 
 static void IRAM_ATTR burst(uint16_t *line) {
-	line += _burst_start;
 	int16_t *b = (_line_counter & 1) ? _burst0 : _burst1;
 	for (int i = 0; i < _burst_width; i += 2) {
 		line[i ^ 1] = b[i];
@@ -258,10 +262,10 @@ static void IRAM_ATTR video_isr(volatile void *vbuf) {
 	if (_debug) {
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
-	} else 	if (i < 2) { // 1 - 2
+	} else if (i < 2) { // 1 - 2
 		fill(line, SYNC_LEVEL, _hsync_long);
 		fill(line + _half_line, SYNC_LEVEL, _hsync_long);
-	} else 	if (i == 2) { // 3
+	} else if (i == 2) { // 3
 		fill(line, SYNC_LEVEL, _hsync_long);
 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
 	} else if (i < 5) { // 4 - 5
@@ -270,45 +274,14 @@ static void IRAM_ATTR video_isr(volatile void *vbuf) {
 	} else if (i < 23) { // 6 - 23
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
-	} else if (i < 310) { // 24 - 310
+	} else if (i < 309) { // 24 - 309
 		fill(line, SYNC_LEVEL, _hsync);
 		burst(line + _burst_start);
 		image(line + _active_start, _lines[i - 23]);
-		// fill_special(line + _active_start, WHITE_LEVEL, 768);
-	} else if (i < 312) { // 311 - 312
+	} else if (i < 311) { // 311
 		fill(line, SYNC_LEVEL, _hsync_short);
 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
-	} else if (i == 312) { // 313
-		fill(line, SYNC_LEVEL, _hsync_short);
-		// Second field
-		fill(line + _half_line, SYNC_LEVEL, _hsync_long);
-	} else if (i < 315) { // 314 - 315
-		fill(line, SYNC_LEVEL, _hsync_long);
-		fill(line + _half_line, SYNC_LEVEL, _hsync_long);
-	} else if (i < 317) { // 316 - 317
-		fill(line, SYNC_LEVEL, _hsync_short);
-		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
-	} else if (i == 317) { // 318
-		fill(line, SYNC_LEVEL, _hsync_short);
-	} else if (i < 335) { // 319 - 335
-		fill(line, SYNC_LEVEL, _hsync);
-		burst(line + _burst_start);
-	} else if (i < 622) { // 336 - 622
-		fill(line, SYNC_LEVEL, _hsync);
-		burst(line + _burst_start);
-		image(line + _active_start, _lines[i - 335]);
-		// fill_special(line + _active_start, WHITE_LEVEL, 768);
-	} else if (i == 622) { // 623
-		fill(line, SYNC_LEVEL, _hsync);
-		burst(line + _burst_start);
-		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
-		if(_repaint_task != NULL) {
-			xTaskNotifyFromISR(_repaint_task, 0, eNoAction, NULL);
-		}
-	} else if (i == 623) { // 624
-		fill(line, SYNC_LEVEL, _hsync_short);
-		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
-	} else if (i == 624) { // 625
+	} else if (i < 312) { // 312
 		fill(line, SYNC_LEVEL, _hsync_short);
 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
 		_line_counter = 0;
@@ -316,4 +289,78 @@ static void IRAM_ATTR video_isr(volatile void *vbuf) {
 	}
 	ISR_END();
 }
+
+// // Workhorse ISR handles audio and video updates
+// static void IRAM_ATTR video_isr(volatile void *vbuf) {
+// 	if (!_lines)
+// 		return;
+
+// 	ISR_BEGIN();
+
+// 	int i = _line_counter++;
+// 	uint16_t *line = (uint16_t*) vbuf;
+
+// 	fill(line, BLANKING_LEVEL, _line_width);
+// 	// First field
+// 	if (_debug) {
+// 		fill(line, SYNC_LEVEL, _hsync);
+// 		burst(line + _burst_start);
+// 	} else if (i < 2) { // 1 - 2
+// 		fill(line, SYNC_LEVEL, _hsync_long);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_long);
+// 	} else if (i == 2) { // 3
+// 		fill(line, SYNC_LEVEL, _hsync_long);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
+// 	} else if (i < 5) { // 4 - 5
+// 		fill(line, SYNC_LEVEL, _hsync_short);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
+// 	} else if (i < 23) { // 6 - 23
+// 		fill(line, SYNC_LEVEL, _hsync);
+// 		burst(line + _burst_start);
+// 	} else if (i < 310) { // 24 - 310
+// 		fill(line, SYNC_LEVEL, _hsync);
+// 		burst(line + _burst_start);
+// 		image(line + _active_start, _lines[i - 23]);
+// 		// fill_special(line + _active_start, WHITE_LEVEL, 768);
+// 	} else if (i < 312) { // 311 - 312
+// 		fill(line, SYNC_LEVEL, _hsync_short);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
+// 	} else if (i == 312) { // 313
+// 		fill(line, SYNC_LEVEL, _hsync_short);
+// 		// Second field
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_long);
+// 	} else if (i < 315) { // 314 - 315
+// 		fill(line, SYNC_LEVEL, _hsync_long);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_long);
+// 	} else if (i < 317) { // 316 - 317
+// 		fill(line, SYNC_LEVEL, _hsync_short);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
+// 	} else if (i == 317) { // 318
+// 		fill(line, SYNC_LEVEL, _hsync_short);
+// 	} else if (i < 335) { // 319 - 335
+// 		fill(line, SYNC_LEVEL, _hsync);
+// 		burst(line + _burst_start);
+// 	} else if (i < 622) { // 336 - 622
+// 		fill(line, SYNC_LEVEL, _hsync);
+// 		burst(line + _burst_start);
+// 		image(line + _active_start, _lines[i - 335]);
+// 		// fill_special(line + _active_start, WHITE_LEVEL, 768);
+// 	} else if (i < 623) { // 623
+// 		fill(line, SYNC_LEVEL, _hsync);
+// 		burst(line + _burst_start);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
+// 		// if(_repaint_task != NULL) {
+// 		// 	xTaskNotifyFromISR(_repaint_task, 0, eNoAction, NULL);
+// 		// }
+// 	} else if (i == 623) { // 624
+// 		fill(line, SYNC_LEVEL, _hsync_short);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
+// 	} else if (i == 624) { // 625
+// 		fill(line, SYNC_LEVEL, _hsync_short);
+// 		fill(line + _half_line, SYNC_LEVEL, _hsync_short);
+// 		_line_counter = 0;
+// 		_frame_counter++;
+// 	}
+// 	ISR_END();
+// }
 
